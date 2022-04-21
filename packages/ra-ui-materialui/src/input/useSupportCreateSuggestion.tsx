@@ -5,6 +5,9 @@ import {
     isValidElement,
     ReactElement,
     useContext,
+    useEffect,
+    useMemo,
+    useRef,
     useState,
 } from 'react';
 import { Identifier, OptionText, useTranslate } from 'ra-core';
@@ -20,7 +23,7 @@ import set from 'lodash/set';
  * @param {any} options.createValue Optional. The value for the choice item allowing users to create a new choice. Defaults to `@@ra-create`.
  * @param {String} options.filter Optional. The filter users may have already entered. Useful for autocomplete inputs for example.
  * @param {OnCreateHandler} options.onCreate Optional. A function which will be called when users choose to create a new choice, if the `create` option wasn't provided.
- * @param handleChange: a function to pass to the input. Receives the same parameter as the original event handler and an additional newItem parameter if a new item was create.
+ * @param {Function} options.handleChange A function to pass to the input. Receives the same parameter as the original event handler and an additional newItem parameter if a new item was create.
  * @returns {UseSupportCreateValue} An object with the following properties:
  * - getCreateItem: a function which will return the label of the choice for create a new choice.
  * - createElement: a React element to render after the input. It will be rendered when users choose to create a new choice. It renders null otherwise.
@@ -40,15 +43,25 @@ export const useSupportCreateSuggestion = (
     } = options;
     const translate = useTranslate();
     const [renderOnCreate, setRenderOnCreate] = useState(false);
+    const filterRef = useRef(filter);
 
-    const context = {
-        filter,
-        onCancel: () => setRenderOnCreate(false),
-        onCreate: item => {
-            setRenderOnCreate(false);
-            handleChange(undefined, item);
-        },
-    };
+    useEffect(() => {
+        if (filterRef.current !== filter && filter !== '') {
+            filterRef.current = filter;
+        }
+    }, [filter]);
+
+    const context = useMemo(
+        () => ({
+            filter: filterRef.current,
+            onCancel: () => setRenderOnCreate(false),
+            onCreate: item => {
+                setRenderOnCreate(false);
+                handleChange(item);
+            },
+        }),
+        [handleChange]
+    );
 
     return {
         getCreateItem: () => {
@@ -77,20 +90,15 @@ export const useSupportCreateSuggestion = (
                     : translate(createLabel, { _: createLabel })
             );
         },
-        handleChange: async eventOrValue => {
-            const value = eventOrValue.target?.value || eventOrValue;
+        handleChange: async (eventOrValue: MouseEvent | any) => {
+            const value = eventOrValue?.target?.value || eventOrValue;
             const finalValue = Array.isArray(value) ? [...value].pop() : value;
 
-            if (eventOrValue?.preventDefault) {
-                eventOrValue.preventDefault();
-                eventOrValue.stopPropagation();
-            }
             if (finalValue?.id === createValue || finalValue === createValue) {
                 if (!isValidElement(create)) {
                     const newSuggestion = await onCreate(filter);
-
                     if (newSuggestion) {
-                        handleChange(eventOrValue, newSuggestion);
+                        handleChange(newSuggestion);
                         return;
                     }
                 } else {
@@ -98,7 +106,7 @@ export const useSupportCreateSuggestion = (
                     return;
                 }
             }
-            handleChange(eventOrValue, undefined);
+            handleChange(eventOrValue);
         },
         createElement:
             renderOnCreate && isValidElement(create) ? (
@@ -115,13 +123,15 @@ export interface SupportCreateSuggestionOptions {
     createLabel?: string;
     createItemLabel?: string;
     filter?: string;
-    handleChange: (value: any, newChoice: any) => void;
+    handleChange: (value: any) => void;
     onCreate?: OnCreateHandler;
     optionText?: OptionText;
 }
 
 export interface UseSupportCreateValue {
-    getCreateItem: () => { id: Identifier; [key: string]: any };
+    getCreateItem: (
+        filterValue?: string
+    ) => { id: Identifier; [key: string]: any };
     handleChange: (eventOrValue: ChangeEvent | any) => Promise<void>;
     createElement: ReactElement | null;
 }

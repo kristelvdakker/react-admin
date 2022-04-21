@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { styled } from '@mui/material/styles';
+import { useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
+import clsx from 'clsx';
 import {
     Select,
     MenuItem,
@@ -8,21 +10,20 @@ import {
     FormHelperText,
     FormControl,
     Chip,
-} from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import classnames from 'classnames';
+} from '@mui/material';
 import {
+    ChoicesProps,
     FieldTitle,
     useInput,
-    InputProps,
-    ChoicesProps,
+    useChoicesContext,
     useChoices,
 } from 'ra-core';
-import InputHelperText from './InputHelperText';
-import { SelectProps } from '@material-ui/core/Select';
-import { FormControlProps } from '@material-ui/core/FormControl';
-import Labeled from './Labeled';
+import { InputHelperText } from './InputHelperText';
+import { FormControlProps } from '@mui/material/FormControl';
+
 import { LinearProgress } from '../layout';
+import { CommonInputProps } from './CommonInputProps';
+import { Labeled } from '../Labeled';
 import {
     SupportCreateSuggestionOptions,
     useSupportCreateSuggestion,
@@ -62,8 +63,8 @@ import {
  * const optionRenderer = choice => `${choice.first_name} ${choice.last_name}`;
  * <SelectArrayInput source="authors" choices={choices} optionText={optionRenderer} />
  *
- * `optionText` also accepts a React Element, that will be cloned and receive
- * the related choice as the `record` prop. You can use Field components there.
+ * `optionText` also accepts a React Element, that can access
+ * the related choice through the `useRecordContext` hook. You can use Field components there.
  * @example
  * const choices = [
  *    { id: 123, first_name: 'Leo', last_name: 'Tolstoi' },
@@ -80,10 +81,9 @@ import {
  *    { id: 'photography', name: 'myroot.tags.photography' },
  * ];
  */
-const SelectArrayInput = (props: SelectArrayInputProps) => {
+export const SelectArrayInput = (props: SelectArrayInputProps) => {
     const {
-        choices = [],
-        classes: classesOverride,
+        choices: choicesProp,
         className,
         create,
         createLabel,
@@ -92,35 +92,32 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
         format,
         helperText,
         label,
-        loaded,
-        loading,
+        isFetching: isFetchingProp,
+        isLoading: isLoadingProp,
         margin = 'dense',
         onBlur,
         onChange,
         onCreate,
-        onFocus,
-        options,
         optionText,
         optionValue,
         parse,
-        resource,
-        source,
+        resource: resourceProp,
+        source: sourceProp,
         translateChoice,
         validate,
         variant = 'filled',
         ...rest
     } = props;
 
-    const classes = useStyles(props);
     const inputLabel = useRef(null);
-    const [labelWidth, setLabelWidth] = useState(0);
 
-    useEffect(() => {
-        // Will be null while loading and we don't need this fix in that case
-        if (inputLabel.current) {
-            setLabelWidth(inputLabel.current.offsetWidth);
-        }
-    }, []);
+    const { allChoices, isLoading, source, resource } = useChoicesContext({
+        choices: choicesProp,
+        isLoading: isLoadingProp,
+        isFetching: isFetchingProp,
+        resource: resourceProp,
+        source: sourceProp,
+    });
 
     const { getChoiceText, getChoiceValue, getDisableValue } = useChoices({
         optionText,
@@ -128,15 +125,16 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
         disableValue,
         translateChoice,
     });
+
     const {
-        input,
+        field,
         isRequired,
-        meta: { error, submitError, touched },
+        fieldState: { error, invalid, isTouched },
+        formState: { isSubmitted },
     } = useInput({
         format,
         onBlur,
         onChange,
-        onFocus,
         parse,
         resource,
         source,
@@ -145,14 +143,21 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
     });
 
     const handleChange = useCallback(
-        (event, newItem) => {
-            if (newItem) {
-                input.onChange([...input.value, getChoiceValue(newItem)]);
-                return;
+        (eventOrChoice: any) => {
+            // We might receive an event from the mui component
+            // In this case, it will be the choice id
+            // eslint-disable-next-line eqeqeq
+            if (eventOrChoice?.target?.value != undefined) {
+                field.onChange(eventOrChoice.target.value);
+            } else {
+                // Or we might receive a choice directly, for instance a newly created one
+                field.onChange([
+                    ...(field.value || []),
+                    getChoiceValue(eventOrChoice),
+                ]);
             }
-            input.onChange(event);
         },
-        [input, getChoiceValue]
+        [field, getChoiceValue]
     );
 
     const {
@@ -170,7 +175,9 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
 
     const createItem = create || onCreate ? getCreateItem() : null;
     const finalChoices =
-        create || onCreate ? [...choices, createItem] : choices;
+        create || onCreate
+            ? [...(allChoices || []), createItem]
+            : allChoices || [];
 
     const renderMenuItemOption = useCallback(
         choice =>
@@ -201,15 +208,14 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
         [getChoiceValue, getDisableValue, renderMenuItemOption, createItem]
     );
 
-    if (loading) {
+    if (isLoading) {
         return (
             <Labeled
                 label={label}
                 source={source}
                 resource={resource}
-                className={className}
+                className={clsx('ra-input', `ra-input-${source}`, className)}
                 isRequired={isRequired}
-                margin={margin}
             >
                 <LinearProgress />
             </Labeled>
@@ -218,17 +224,17 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
 
     return (
         <>
-            <FormControl
+            <StyledFormControl
                 margin={margin}
-                className={classnames(classes.root, className)}
-                error={touched && !!(error || submitError)}
+                className={clsx('ra-input', `ra-input-${source}`, className)}
+                error={(isTouched || isSubmitted) && invalid}
                 variant={variant}
                 {...sanitizeRestProps(rest)}
             >
                 <InputLabel
                     ref={inputLabel}
                     id={`${label}-outlined-label`}
-                    error={touched && !!(error || submitError)}
+                    error={(isTouched || isSubmitted) && invalid}
                 >
                     <FieldTitle
                         label={label}
@@ -241,12 +247,12 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
                     autoWidth
                     labelId={`${label}-outlined-label`}
                     multiple
-                    error={!!(touched && (error || submitError))}
+                    error={(isTouched || isSubmitted) && invalid}
                     renderValue={(selected: any[]) => (
-                        <div className={classes.chips}>
+                        <div className={SelectArrayInputClasses.chips}>
                             {selected
                                 .map(item =>
-                                    choices.find(
+                                    (allChoices || []).find(
                                         choice =>
                                             getChoiceValue(choice) === item
                                     )
@@ -256,48 +262,43 @@ const SelectArrayInput = (props: SelectArrayInputProps) => {
                                     <Chip
                                         key={getChoiceValue(item)}
                                         label={renderMenuItemOption(item)}
-                                        className={classes.chip}
+                                        className={SelectArrayInputClasses.chip}
+                                        size="small"
                                     />
                                 ))}
                         </div>
                     )}
                     data-testid="selectArray"
-                    {...input}
+                    size="small"
+                    {...field}
                     onChange={handleChangeWithCreateSupport}
-                    value={input.value || []}
-                    labelWidth={labelWidth}
-                    {...options}
+                    value={field.value || []}
                 >
                     {finalChoices.map(renderMenuItem)}
                 </Select>
-                <FormHelperText error={touched && !!(error || submitError)}>
+                <FormHelperText error={isTouched && !!error}>
                     <InputHelperText
-                        touched={touched}
-                        error={error || submitError}
+                        touched={isTouched || isSubmitted}
+                        error={error?.message}
                         helperText={helperText}
                     />
                 </FormHelperText>
-            </FormControl>
+            </StyledFormControl>
             {createElement}
         </>
     );
 };
 
-export interface SelectArrayInputProps
-    extends Omit<ChoicesProps, 'choices' | 'optionText'>,
-        Omit<SupportCreateSuggestionOptions, 'handleChange'>,
-        Omit<InputProps<SelectProps>, 'source'>,
-        Omit<
-            FormControlProps,
-            'defaultValue' | 'onBlur' | 'onChange' | 'onFocus'
-        > {
-    choices?: object[];
-    source?: string;
-}
+export type SelectArrayInputProps = ChoicesProps &
+    Omit<SupportCreateSuggestionOptions, 'handleChange'> &
+    Omit<CommonInputProps, 'source'> &
+    Omit<FormControlProps, 'defaultValue' | 'onBlur' | 'onChange'> & {
+        disableValue?: string;
+        source?: string;
+    };
 
 SelectArrayInput.propTypes = {
     choices: PropTypes.arrayOf(PropTypes.object),
-    classes: PropTypes.object,
     className: PropTypes.string,
     children: PropTypes.node,
     label: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
@@ -323,10 +324,7 @@ SelectArrayInput.defaultProps = {
 };
 
 const sanitizeRestProps = ({
-    addLabel,
-    allowEmpty,
     alwaysOn,
-    basePath,
     choices,
     classNamInputWithOptionsPropse,
     componenInputWithOptionsPropst,
@@ -368,18 +366,25 @@ const sanitizeRestProps = ({
     ...rest
 }: any) => rest;
 
-const useStyles = makeStyles(
-    theme => ({
-        root: {},
-        chips: {
-            display: 'flex',
-            flexWrap: 'wrap',
-        },
-        chip: {
-            margin: theme.spacing(1 / 4),
-        },
-    }),
-    { name: 'RaSelectArrayInput' }
-);
+const PREFIX = 'RaSelectArrayInput';
 
-export default SelectArrayInput;
+export const SelectArrayInputClasses = {
+    chips: `${PREFIX}-chips`,
+    chip: `${PREFIX}-chip`,
+};
+
+const StyledFormControl = styled(FormControl, {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme }) => ({
+    minWidth: theme.spacing(20),
+    [`& .${SelectArrayInputClasses.chips}`]: {
+        display: 'flex',
+        flexWrap: 'wrap',
+    },
+
+    [`& .${SelectArrayInputClasses.chip}`]: {
+        marginTop: theme.spacing(0.5),
+        marginRight: theme.spacing(0.5),
+    },
+}));

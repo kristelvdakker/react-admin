@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCallback } from 'react';
 import PropTypes from 'prop-types';
-import DownloadIcon from '@material-ui/icons/GetApp';
+import DownloadIcon from '@mui/icons-material/GetApp';
 import {
     fetchRelatedRecords,
     useDataProvider,
@@ -12,22 +12,21 @@ import {
     FilterPayload,
     useResourceContext,
 } from 'ra-core';
-import Button, { ButtonProps } from './Button';
+import { Button, ButtonProps } from './Button';
 
-const ExportButton = (props: ExportButtonProps) => {
+export const ExportButton = (props: ExportButtonProps) => {
     const {
         maxResults = 1000,
         onClick,
         label = 'ra.action.export',
         icon = defaultIcon,
         exporter: customExporter,
-        sort, // deprecated, to be removed in v4
         ...rest
     } = props;
     const {
         filter,
         filterValues,
-        currentSort,
+        sort,
         exporter: exporterFromContext,
         total,
     } = useListContext(props);
@@ -39,7 +38,7 @@ const ExportButton = (props: ExportButtonProps) => {
         event => {
             dataProvider
                 .getList(resource, {
-                    sort: currentSort || sort,
+                    sort,
                     filter: filter
                         ? { ...filterValues, ...filter }
                         : filterValues,
@@ -64,7 +63,6 @@ const ExportButton = (props: ExportButtonProps) => {
             }
         },
         [
-            currentSort,
             dataProvider,
             exporter,
             filter,
@@ -92,7 +90,6 @@ const ExportButton = (props: ExportButtonProps) => {
 const defaultIcon = <DownloadIcon />;
 
 const sanitizeRestProps = ({
-    basePath,
     filterValues,
     resource,
     ...rest
@@ -100,7 +97,6 @@ const sanitizeRestProps = ({
     rest;
 
 interface Props {
-    basePath?: string;
     exporter?: Exporter;
     filterValues?: FilterPayload;
     icon?: JSX.Element;
@@ -114,7 +110,6 @@ interface Props {
 export type ExportButtonProps = Props & ButtonProps;
 
 ExportButton.propTypes = {
-    basePath: PropTypes.string,
     exporter: PropTypes.func,
     filterValues: PropTypes.object,
     label: PropTypes.string,
@@ -126,5 +121,3 @@ ExportButton.propTypes = {
     }),
     icon: PropTypes.element,
 };
-
-export default ExportButton;

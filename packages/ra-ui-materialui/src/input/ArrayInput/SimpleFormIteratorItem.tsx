@@ -9,13 +9,11 @@ import {
     ReactNode,
     useMemo,
 } from 'react';
-import { Typography } from '@material-ui/core';
-import classNames from 'classnames';
-import { Record } from 'ra-core';
+import { Typography } from '@mui/material';
+import clsx from 'clsx';
+import { RaRecord } from 'ra-core';
 
-import { ClassesOverride } from '../../types';
-import FormInput from '../../form/FormInput';
-import { useSimpleFormIteratorStyles } from './useSimpleFormIteratorStyles';
+import { SimpleFormIteratorClasses } from './useSimpleFormIteratorStyles';
 import { useSimpleFormIterator } from './useSimpleFormIterator';
 import { ArrayInputContextValue } from './ArrayInputContext';
 import {
@@ -26,22 +24,18 @@ import {
 export const SimpleFormIteratorItem = React.forwardRef(
     (props: SimpleFormIteratorItemProps, ref: any) => {
         const {
-            basePath,
             children,
-            classes,
             disabled,
             disableReordering,
             disableRemove,
             getItemLabel,
             index,
-            margin,
             member,
             record,
             removeButton,
             reOrderButtons,
             resource,
             source,
-            variant,
         } = props;
 
         const { total, reOrder, remove } = useSimpleFormIterator();
@@ -49,7 +43,7 @@ export const SimpleFormIteratorItem = React.forwardRef(
         // If disableRemove is a function, then call the function with the current record to
         // determining if the button should be disabled. Otherwise, use a boolean property that
         // enables or disables the button for all of the fields.
-        const disableRemoveField = (record: Record) => {
+        const disableRemoveField = (record: RaRecord) => {
             if (typeof disableRemove === 'boolean') {
                 return disableRemove;
             }
@@ -79,12 +73,14 @@ export const SimpleFormIteratorItem = React.forwardRef(
 
         return (
             <SimpleFormIteratorItemContext.Provider value={context}>
-                <li className={classes.line} ref={ref}>
+                <li className={SimpleFormIteratorClasses.line} ref={ref}>
                     <div>
-                        <div className={classes.indexContainer}>
+                        <div
+                            className={SimpleFormIteratorClasses.indexContainer}
+                        >
                             <Typography
                                 variant="body1"
-                                className={classes.index}
+                                className={SimpleFormIteratorClasses.index}
                             >
                                 {getItemLabel(index)}
                             </Typography>
@@ -94,14 +90,14 @@ export const SimpleFormIteratorItem = React.forwardRef(
                                     index,
                                     max: total,
                                     reOrder,
-                                    className: classNames(
+                                    className: clsx(
                                         'button-reorder',
                                         `button-reorder-${source}-${index}`
                                     ),
                                 })}
                         </div>
                     </div>
-                    <section className={classes.form}>
+                    <section className={SimpleFormIteratorClasses.form}>
                         {Children.map(
                             children,
                             (input: ReactElement, index2) => {
@@ -109,43 +105,31 @@ export const SimpleFormIteratorItem = React.forwardRef(
                                     return null;
                                 }
                                 const { source, ...inputProps } = input.props;
-                                return (
-                                    <FormInput
-                                        basePath={
-                                            input.props.basePath || basePath
-                                        }
-                                        input={cloneElement(input, {
-                                            source: source
-                                                ? `${member}.${source}`
-                                                : member,
-                                            index: source ? undefined : index2,
-                                            label:
-                                                typeof input.props.label ===
-                                                'undefined'
-                                                    ? source
-                                                        ? `resources.${resource}.fields.${source}`
-                                                        : undefined
-                                                    : input.props.label,
-                                            disabled,
-                                            ...inputProps,
-                                        })}
-                                        record={record}
-                                        resource={resource}
-                                        variant={variant}
-                                        margin={margin}
-                                    />
-                                );
+                                return cloneElement(input, {
+                                    source: source
+                                        ? `${member}.${source}`
+                                        : member,
+                                    index: source ? undefined : index2,
+                                    label:
+                                        typeof input.props.label === 'undefined'
+                                            ? source
+                                                ? `resources.${resource}.fields.${source}`
+                                                : undefined
+                                            : input.props.label,
+                                    disabled,
+                                    ...inputProps,
+                                });
                             }
                         )}
                     </section>
                     {!disabled && !disableRemoveField(record) && (
-                        <span className={classes.action}>
+                        <span className={SimpleFormIteratorClasses.action}>
                             {cloneElement(removeButton, {
                                 onClick: handleRemoveButtonClick(
                                     removeButton.props.onClick,
                                     index
                                 ),
-                                className: classNames(
+                                className: clsx(
                                     'button-remove',
                                     `button-remove-${source}-${index}`
                                 ),
@@ -158,25 +142,21 @@ export const SimpleFormIteratorItem = React.forwardRef(
     }
 );
 
-export type DisableRemoveFunction = (record: Record) => boolean;
+export type DisableRemoveFunction = (record: RaRecord) => boolean;
 
-export type SimpleFormIteratorItemProps = ArrayInputContextValue & {
-    basePath: string;
+export type SimpleFormIteratorItemProps = Partial<ArrayInputContextValue> & {
     children?: ReactNode;
-    classes?: ClassesOverride<typeof useSimpleFormIteratorStyles>;
     disabled?: boolean;
     disableRemove?: boolean | DisableRemoveFunction;
     disableReordering?: boolean;
     getItemLabel?: (index: number) => string;
     index: number;
-    margin?: 'none' | 'normal' | 'dense';
     member: string;
     onRemoveField: (index: number) => void;
     onReorder: (origin: number, destination: number) => void;
-    record: Record;
+    record: RaRecord;
     removeButton?: ReactElement;
     reOrderButtons?: ReactElement;
     resource: string;
     source: string;
-    variant?: 'standard' | 'outlined' | 'filled';
 };

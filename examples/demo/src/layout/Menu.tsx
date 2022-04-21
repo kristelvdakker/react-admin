@@ -1,15 +1,14 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
-import LabelIcon from '@material-ui/icons/Label';
-import { makeStyles } from '@material-ui/core/styles';
-import classnames from 'classnames';
+import Box from '@mui/material/Box';
+import LabelIcon from '@mui/icons-material/Label';
+
 import {
     useTranslate,
     DashboardMenuItem,
     MenuItemLink,
     MenuProps,
-    ReduxState,
+    useSidebarState,
 } from 'react-admin';
 
 import visitors from '../visitors';
@@ -19,7 +18,6 @@ import products from '../products';
 import categories from '../categories';
 import reviews from '../reviews';
 import SubMenu from './SubMenu';
-import { AppState } from '../types';
 
 type MenuName = 'menuCatalog' | 'menuSales' | 'menuCustomers';
 
@@ -30,22 +28,25 @@ const Menu = ({ dense = false }: MenuProps) => {
         menuCustomers: true,
     });
     const translate = useTranslate();
-    const open = useSelector((state: ReduxState) => state.admin.ui.sidebarOpen);
-    useSelector((state: AppState) => state.theme); // force rerender on theme change
-    const classes = useStyles();
+    const [open] = useSidebarState();
 
     const handleToggle = (menu: MenuName) => {
         setState(state => ({ ...state, [menu]: !state[menu] }));
     };
 
     return (
-        <div
-            className={classnames(classes.root, {
-                [classes.open]: open,
-                [classes.closed]: !open,
-            })}
+        <Box
+            sx={{
+                width: open ? 200 : 50,
+                marginTop: 1,
+                marginBottom: 1,
+                transition: theme =>
+                    theme.transitions.create('width', {
+                        easing: theme.transitions.easing.sharp,
+                        duration: theme.transitions.duration.leavingScreen,
+                    }),
+            }}
         >
-            {' '}
             <DashboardMenuItem />
             <SubMenu
                 handleToggle={() => handleToggle('menuSales')}
@@ -55,10 +56,8 @@ const Menu = ({ dense = false }: MenuProps) => {
                 dense={dense}
             >
                 <MenuItemLink
-                    to={{
-                        pathname: '/commands',
-                        state: { _scrollToTop: true },
-                    }}
+                    to="/commands"
+                    state={{ _scrollToTop: true }}
                     primaryText={translate(`resources.commands.name`, {
                         smart_count: 2,
                     })}
@@ -66,10 +65,8 @@ const Menu = ({ dense = false }: MenuProps) => {
                     dense={dense}
                 />
                 <MenuItemLink
-                    to={{
-                        pathname: '/invoices',
-                        state: { _scrollToTop: true },
-                    }}
+                    to="/invoices"
+                    state={{ _scrollToTop: true }}
                     primaryText={translate(`resources.invoices.name`, {
                         smart_count: 2,
                     })}
@@ -85,10 +82,8 @@ const Menu = ({ dense = false }: MenuProps) => {
                 dense={dense}
             >
                 <MenuItemLink
-                    to={{
-                        pathname: '/products',
-                        state: { _scrollToTop: true },
-                    }}
+                    to="/products"
+                    state={{ _scrollToTop: true }}
                     primaryText={translate(`resources.products.name`, {
                         smart_count: 2,
                     })}
@@ -96,10 +91,8 @@ const Menu = ({ dense = false }: MenuProps) => {
                     dense={dense}
                 />
                 <MenuItemLink
-                    to={{
-                        pathname: '/categories',
-                        state: { _scrollToTop: true },
-                    }}
+                    to="/categories"
+                    state={{ _scrollToTop: true }}
                     primaryText={translate(`resources.categories.name`, {
                         smart_count: 2,
                     })}
@@ -115,10 +108,8 @@ const Menu = ({ dense = false }: MenuProps) => {
                 dense={dense}
             >
                 <MenuItemLink
-                    to={{
-                        pathname: '/customers',
-                        state: { _scrollToTop: true },
-                    }}
+                    to="/customers"
+                    state={{ _scrollToTop: true }}
                     primaryText={translate(`resources.customers.name`, {
                         smart_count: 2,
                     })}
@@ -126,10 +117,8 @@ const Menu = ({ dense = false }: MenuProps) => {
                     dense={dense}
                 />
                 <MenuItemLink
-                    to={{
-                        pathname: '/segments',
-                        state: { _scrollToTop: true },
-                    }}
+                    to="/segments"
+                    state={{ _scrollToTop: true }}
                     primaryText={translate(`resources.segments.name`, {
                         smart_count: 2,
                     })}
@@ -138,35 +127,16 @@ const Menu = ({ dense = false }: MenuProps) => {
                 />
             </SubMenu>
             <MenuItemLink
-                to={{
-                    pathname: '/reviews',
-                    state: { _scrollToTop: true },
-                }}
+                to="/reviews"
+                state={{ _scrollToTop: true }}
                 primaryText={translate(`resources.reviews.name`, {
                     smart_count: 2,
                 })}
                 leftIcon={<reviews.icon />}
                 dense={dense}
             />
-        </div>
+        </Box>
     );
 };
-
-const useStyles = makeStyles(theme => ({
-    root: {
-        marginTop: theme.spacing(1),
-        marginBottom: theme.spacing(1),
-        transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-    },
-    open: {
-        width: 200,
-    },
-    closed: {
-        width: 55,
-    },
-}));
 
 export default Menu;

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { forwardRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import MenuItem from '@material-ui/core/MenuItem';
+import MenuItem from '@mui/material/MenuItem';
 import { FieldTitle, useResourceContext } from 'ra-core';
 
 export const FilterButtonMenuItem = forwardRef<any, FilterButtonMenuItemProps>(
@@ -24,6 +24,7 @@ export const FilterButtonMenuItem = forwardRef<any, FilterButtonMenuItemProps>(
                 onClick={handleShow}
                 autoFocus={autoFocus}
                 ref={ref}
+                disabled={filter.props.disabled}
             >
                 <FieldTitle
                     label={filter.props.label}
@@ -46,5 +47,5 @@ export interface FilterButtonMenuItemProps {
     filter: JSX.Element;
     onShow: (params: { source: string; defaultValue: any }) => void;
     resource: string;
-    autoFocus: boolean;
+    autoFocus?: boolean;
 }

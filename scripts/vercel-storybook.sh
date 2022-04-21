@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# No storybook deployment on this branch
-exit 0;
+# storybook builds are allowed in this branch
+exit 1;

@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 
 import useAuthProvider from './useAuthProvider';
 import useLogout from './useLogout';
-import { useNotify } from '../sideEffect';
-import { useHistory } from 'react-router';
+import { useNotify } from '../notification';
+import { useNavigate } from 'react-router';
 
 let timer;
 
@@ -42,8 +42,7 @@ const useLogoutIfAccessDenied = (): LogoutIfAccessDenied => {
     const authProvider = useAuthProvider();
     const logout = useLogout();
     const notify = useNotify();
-    const history = useHistory();
-
+    const navigate = useNavigate();
     const logoutIfAccessDenied = useCallback(
         (error?: any, disableNotification?: boolean) =>
             authProvider
@@ -72,13 +71,21 @@ const useLogoutIfAccessDenied = (): LogoutIfAccessDenied => {
                             .checkAuth({})
                             .then(() => {
                                 if (logoutUser) {
-                                    notify('ra.notification.logged_out', {
-                                        type: 'warning',
-                                    });
+                                    notify(
+                                        getErrorMessage(
+                                            e,
+                                            'ra.notification.logged_out'
+                                        ),
+                                        { type: 'warning' }
+                                    );
                                 } else {
-                                    notify('ra.notification.not_authorized', {
-                                        type: 'warning',
-                                    });
+                                    notify(
+                                        getErrorMessage(
+                                            e,
+                                            'ra.notification.not_authorized'
+                                        ),
+                                        { type: 'warning' }
+                                    );
                                 }
                             })
                             .catch(() => {});
@@ -93,12 +100,12 @@ const useLogoutIfAccessDenied = (): LogoutIfAccessDenied => {
                     if (logoutUser) {
                         logout({}, redirectTo);
                     } else {
-                        history.push(redirectTo);
+                        navigate(redirectTo);
                     }
 
                     return true;
                 }),
-        [authProvider, logout, notify, history]
+        [authProvider, logout, notify, navigate]
     );
     return authProvider
         ? logoutIfAccessDenied
@@ -121,5 +128,12 @@ type LogoutIfAccessDenied = (
     /** @deprecated to disable the notification, authProvider.checkAuth() should return an object with an error property set to true */
     disableNotification?: boolean
 ) => Promise<boolean>;
+
+const getErrorMessage = (error, defaultMessage) =>
+    typeof error === 'string'
+        ? error
+        : typeof error === 'undefined' || !error.message
+        ? defaultMessage
+        : error.message;
 
 export default useLogoutIfAccessDenied;

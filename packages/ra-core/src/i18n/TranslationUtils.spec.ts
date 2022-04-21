@@ -25,6 +25,13 @@ describe('TranslationUtils', () => {
             // @ts-ignore
             expect(resolveBrowserLocale()).toEqual('en');
         });
+
+        it('should return the full locale', () => {
+            // @ts-ignore
+            expect(
+                resolveBrowserLocale(DEFAULT_LOCALE, { fullLocale: true })
+            ).toEqual('en-US');
+        });
     });
 
     describe('mergeTranslations', () => {

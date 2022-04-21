@@ -1,16 +1,12 @@
 import * as React from 'react';
-import { ComponentType } from 'react';
 
-import CoreAdminContext from './CoreAdminContext';
-import CoreAdminUI from './CoreAdminUI';
-import { AdminProps } from '../types';
-
-export type ChildrenFunction = () => ComponentType[];
+import { CoreAdminContext, CoreAdminContextProps } from './CoreAdminContext';
+import { CoreAdminUI, CoreAdminUIProps } from './CoreAdminUI';
 
 /**
  * Main admin component, entry point to the application.
  *
- * Initializes the various contexts (auth, data, i18n, redux, router)
+ * Initializes the various contexts (auth, data, i18n, router)
  * and defines the main routes.
  *
  * Expects a list of resources as children, or a function returning a list of
@@ -28,9 +24,9 @@ export type ChildrenFunction = () => ComponentType[];
  * } from 'ra-core';
  *
  * const App = () => (
- *     <Core dataProvider={myDataProvider}>
+ *     <CoreAdmin dataProvider={myDataProvider}>
  *         <Resource name="posts" list={ListGuesser} />
- *     </Core>
+ *     </CoreAdmin>
  * );
  *
  * // dynamic list of resources based on permissions
@@ -86,51 +82,44 @@ export type ChildrenFunction = () => ComponentType[];
  *     );
  * };
  */
-const CoreAdmin = (props: AdminProps) => {
+export const CoreAdmin = (props: CoreAdminProps) => {
     const {
-        appLayout,
         authProvider,
+        basename,
         catchAll,
         children,
-        customReducers,
-        customRoutes = [],
-        customSagas,
         dashboard,
         dataProvider,
         disableTelemetry,
         history,
         i18nProvider,
-        initialState,
+        queryClient,
         layout,
         loading,
         loginPage,
-        logoutButton,
         menu, // deprecated, use a custom layout instead
-        theme,
+        requireAuth,
         title = 'React Admin',
     } = props;
     return (
         <CoreAdminContext
             authProvider={authProvider}
+            basename={basename}
             dataProvider={dataProvider}
             i18nProvider={i18nProvider}
+            queryClient={queryClient}
             history={history}
-            customReducers={customReducers}
-            customSagas={customSagas}
-            initialState={initialState}
         >
             <CoreAdminUI
-                layout={appLayout || layout}
-                customRoutes={customRoutes}
+                layout={layout}
                 dashboard={dashboard}
                 disableTelemetry={disableTelemetry}
                 menu={menu}
                 catchAll={catchAll}
-                theme={theme}
                 title={title}
                 loading={loading}
                 loginPage={loginPage}
-                logout={authProvider ? logoutButton : undefined}
+                requireAuth={requireAuth}
             >
                 {children}
             </CoreAdminUI>
@@ -138,4 +127,4 @@ const CoreAdmin = (props: AdminProps) => {
     );
 };
 
-export default CoreAdmin;
+export type CoreAdminProps = CoreAdminContextProps & CoreAdminUIProps;

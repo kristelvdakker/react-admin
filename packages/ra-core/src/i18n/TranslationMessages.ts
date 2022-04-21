@@ -39,6 +39,8 @@ export interface TranslationMessages extends StringMap {
             update: string;
             move_up: string;
             move_down: string;
+            open: string;
+            toggle_theme: string;
         };
         boolean: {
             [key: string]: StringMap | string;
@@ -110,9 +112,14 @@ export interface TranslationMessages extends StringMap {
             page_out_from_end: string;
             page_out_from_begin: string;
             page_range_info: string;
+            partial_page_range_info: string;
             page_rows_per_page: string;
+            current_page: string;
+            page: string;
+            first: string;
+            last: string;
             next: string;
-            prev: string;
+            previous: string;
             skip_nav: string;
         };
         sort: {
@@ -155,6 +162,17 @@ export interface TranslationMessages extends StringMap {
             email: string;
             oneOf: string;
             regex: string;
+        };
+        saved_queries: {
+            label: string;
+            query_name: string;
+            new_label: string;
+            new_dialog_title: string;
+            remove_label: string;
+            remove_label_with_name: string;
+            remove_dialog_title: string;
+            remove_message: string;
+            help: string;
         };
     };
 }

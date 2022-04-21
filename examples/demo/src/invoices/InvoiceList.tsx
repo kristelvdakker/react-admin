@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {
     List,
-    ListProps,
     Datagrid,
     TextField,
     DateField,
@@ -9,7 +8,6 @@ import {
     NumberField,
     DateInput,
 } from 'react-admin';
-import { makeStyles } from '@material-ui/core/styles';
 
 import FullNameField from '../visitors/FullNameField';
 import AddressField from '../visitors/AddressField';
@@ -20,25 +18,31 @@ const listFilters = [
     <DateInput source="date_lte" alwaysOn />,
 ];
 
-const useStyles = makeStyles(theme => ({
-    hiddenOnSmallScreens: {
-        display: 'table-cell',
-        [theme.breakpoints.down('md')]: {
-            display: 'none',
-        },
-    },
-}));
-
-const InvoiceList = (props: ListProps) => {
-    const classes = useStyles();
+const InvoiceList = () => {
     return (
         <List
-            {...props}
             filters={listFilters}
             perPage={25}
             sort={{ field: 'date', order: 'desc' }}
         >
-            <Datagrid rowClick="expand" expand={<InvoiceShow />}>
+            <Datagrid
+                rowClick="expand"
+                expand={<InvoiceShow />}
+                sx={{
+                    '& .column-customer_id': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                    '& .column-total_ex_taxes': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                    '& .column-delivery_fees': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                    '& .column-taxes': {
+                        display: { xs: 'none', md: 'table-cell' },
+                    },
+                }}
+            >
                 <TextField source="id" />
                 <DateField source="date" />
                 <ReferenceField source="customer_id" reference="customers">
@@ -49,8 +53,6 @@ const InvoiceList = (props: ListProps) => {
                     reference="customers"
                     link={false}
                     label="resources.invoices.fields.address"
-                    cellClassName={classes.hiddenOnSmallScreens}
-                    headerClassName={classes.hiddenOnSmallScreens}
                 >
                     <AddressField />
                 </ReferenceField>

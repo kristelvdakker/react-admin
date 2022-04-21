@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { Box, Chip, useMediaQuery, Theme } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { Box, Chip, useMediaQuery, Theme } from '@mui/material';
 import {
     CreateButton,
     ExportButton,
@@ -9,7 +8,6 @@ import {
     FilterContext,
     InputProps,
     ListBase,
-    ListProps,
     NumberInput,
     Pagination,
     ReferenceInput,
@@ -18,23 +16,41 @@ import {
     SortButton,
     Title,
     TopToolbar,
-    useListContext,
     useTranslate,
+    useGetResourceLabel,
 } from 'react-admin';
 
-import GridList from './GridList';
+import ImageList from './GridList';
 import Aside from './Aside';
 
-const useQuickFilterStyles = makeStyles(theme => ({
-    root: {
-        marginBottom: theme.spacing(1),
-    },
-}));
+const ProductList = () => {
+    const getResourceLabel = useGetResourceLabel();
+    const isSmall = useMediaQuery<Theme>(theme => theme.breakpoints.down('md'));
+    return (
+        <ListBase perPage={24} sort={{ field: 'reference', order: 'ASC' }}>
+            <Title defaultTitle={getResourceLabel('products', 2)} />
+            <FilterContext.Provider value={productFilters}>
+                <ListActions isSmall={isSmall} />
+                {isSmall && (
+                    <Box m={1}>
+                        <FilterForm />
+                    </Box>
+                )}
+            </FilterContext.Provider>
+            <Box display="flex">
+                <Aside />
+                <Box width={isSmall ? 'auto' : 'calc(100% - 16em)'}>
+                    <ImageList />
+                    <Pagination rowsPerPageOptions={[12, 24, 48, 72]} />
+                </Box>
+            </Box>
+        </ListBase>
+    );
+};
 
 const QuickFilter = ({ label }: InputProps) => {
     const translate = useTranslate();
-    const classes = useQuickFilterStyles();
-    return <Chip className={classes.root} label={translate(label)} />;
+    return <Chip sx={{ mb: 1 }} label={translate(label as string)} />;
 };
 
 export const productFilters = [
@@ -58,48 +74,12 @@ export const productFilters = [
 ];
 
 const ListActions = ({ isSmall }: any) => (
-    <TopToolbar>
+    <TopToolbar sx={{ minHeight: { sm: 56 } }}>
         {isSmall && <FilterButton />}
         <SortButton fields={['reference', 'sales', 'stock']} />
-        <CreateButton basePath="/products" />
+        <CreateButton />
         <ExportButton />
     </TopToolbar>
 );
 
-const ProductList = (props: ListProps) => {
-    const isSmall = useMediaQuery<Theme>(theme => theme.breakpoints.down('sm'));
-    return (
-        <ListBase
-            perPage={20}
-            sort={{ field: 'reference', order: 'ASC' }}
-            {...props}
-        >
-            <ProductListView isSmall={isSmall} />
-        </ListBase>
-    );
-};
-
-const ProductListView = ({ isSmall }: { isSmall: boolean }) => {
-    const { defaultTitle } = useListContext();
-    return (
-        <>
-            <Title defaultTitle={defaultTitle} />
-            <FilterContext.Provider value={productFilters}>
-                <ListActions isSmall={isSmall} />
-                {isSmall && (
-                    <Box m={1}>
-                        <FilterForm />
-                    </Box>
-                )}
-            </FilterContext.Provider>
-            <Box display="flex">
-                <Aside />
-                <Box width={isSmall ? 'auto' : 'calc(100% - 16em)'}>
-                    <GridList />
-                    <Pagination rowsPerPageOptions={[10, 20, 40]} />
-                </Box>
-            </Box>
-        </>
-    );
-};
 export default ProductList;

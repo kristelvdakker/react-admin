@@ -2,21 +2,11 @@ import * as React from 'react';
 import { memo, FC } from 'react';
 import PropTypes from 'prop-types';
 import get from 'lodash/get';
-import Typography, { TypographyProps } from '@material-ui/core/Typography';
+import { Typography, TypographyProps } from '@mui/material';
 import { useRecordContext } from 'ra-core';
 
-import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { sanitizeFieldRestProps } from './sanitizeFieldRestProps';
 import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
-
-const toLocaleStringSupportsLocales = (() => {
-    // from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleString
-    try {
-        new Date().toLocaleString('i');
-    } catch (error) {
-        return error instanceof RangeError;
-    }
-    return false;
-})();
 
 /**
  * Display a date value as a locale string.
@@ -103,10 +93,6 @@ export const DateField: FC<DateFieldProps> = memo(props => {
     );
 });
 
-DateField.defaultProps = {
-    addLabel: true,
-};
-
 DateField.propTypes = {
     // @ts-ignore
     ...Typography.propTypes,
@@ -124,10 +110,18 @@ DateField.displayName = 'DateField';
 export interface DateFieldProps
     extends PublicFieldProps,
         InjectedFieldProps,
-        TypographyProps {
+        Omit<TypographyProps, 'textAlign'> {
     locales?: string | string[];
     options?: object;
     showTime?: boolean;
 }
 
-export default DateField;
+const toLocaleStringSupportsLocales = (() => {
+    // from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleString
+    try {
+        new Date().toLocaleString('i');
+    } catch (error) {
+        return error instanceof RangeError;
+    }
+    return false;
+})();

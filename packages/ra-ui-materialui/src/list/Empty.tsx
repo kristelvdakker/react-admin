@@ -1,22 +1,21 @@
 import * as React from 'react';
-import { ReactElement } from 'react';
-import { Typography } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import Inbox from '@material-ui/icons/Inbox';
+import { styled } from '@mui/material/styles';
+import { Typography } from '@mui/material';
+import Inbox from '@mui/icons-material/Inbox';
 import {
     useTranslate,
-    useListContext,
+    useResourceDefinition,
     useResourceContext,
     useGetResourceLabel,
 } from 'ra-core';
 
-import { ClassesOverride } from '../types';
 import { CreateButton } from '../button';
 
 export const Empty = (props: EmptyProps) => {
-    const { basePath, hasCreate } = useListContext(props);
+    const { className } = props;
+    const { hasCreate } = useResourceDefinition(props);
     const resource = useResourceContext(props);
-    const classes = useStyles(props);
+
     const translate = useTranslate();
     const { icon = <Inbox className={classes.icon} /> } = props;
 
@@ -30,9 +29,9 @@ export const Empty = (props: EmptyProps) => {
     const inviteMessage = translate('ra.page.invite');
 
     return (
-        <>
-            <div className={classes.message}>
-                {icon}
+        <Root className={className}>
+            <div className={EmptyClasses.message}>
+                <Inbox className={EmptyClasses.icon} />
                 <Typography variant="h4" paragraph>
                     {translate(`resources.${resource}.empty`, {
                         _: emptyMessage,
@@ -47,39 +46,50 @@ export const Empty = (props: EmptyProps) => {
                 )}
             </div>
             {hasCreate && (
-                <div className={classes.toolbar}>
-                    <CreateButton variant="contained" basePath={basePath} />
+                <div className={EmptyClasses.toolbar}>
+                    <CreateButton variant="contained" />
                 </div>
             )}
-        </>
+        </Root>
     );
 };
 
 export interface EmptyProps {
-    classes?: ClassesOverride<typeof useStyles>;
-    icon?: ReactElement;
     resource?: string;
+    hasCreate?: boolean;
+    className?: string;
 }
 
-const useStyles = makeStyles(
-    theme => ({
-        message: {
-            textAlign: 'center',
-            opacity: theme.palette.type === 'light' ? 0.5 : 0.8,
-            margin: '0 1em',
-            color:
-                theme.palette.type === 'light'
-                    ? 'inherit'
-                    : theme.palette.text.primary,
-        },
-        icon: {
-            width: '9em',
-            height: '9em',
-        },
-        toolbar: {
-            textAlign: 'center',
-            marginTop: '2em',
-        },
-    }),
-    { name: 'RaEmpty' }
-);
+const PREFIX = 'RaEmpty';
+
+export const EmptyClasses = {
+    message: `${PREFIX}-message`,
+    icon: `${PREFIX}-icon`,
+    toolbar: `${PREFIX}-toolbar`,
+};
+
+const Root = styled('span', {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme }) => ({
+    flex: 1,
+    [`& .${EmptyClasses.message}`]: {
+        textAlign: 'center',
+        opacity: theme.palette.mode === 'light' ? 0.5 : 0.8,
+        margin: '0 1em',
+        color:
+            theme.palette.mode === 'light'
+                ? 'inherit'
+                : theme.palette.text.primary,
+    },
+
+    [`& .${EmptyClasses.icon}`]: {
+        width: '9em',
+        height: '9em',
+    },
+
+    [`& .${EmptyClasses.toolbar}`]: {
+        textAlign: 'center',
+        marginTop: '2em',
+    },
+}));

@@ -35,6 +35,8 @@ const englishMessages: TranslationMessages = {
             update: 'Update',
             move_up: 'Move up',
             move_down: 'Move down',
+            open: 'Open',
+            toggle_theme: 'Toggle Theme',
         },
         boolean: {
             true: 'Yes',
@@ -110,9 +112,15 @@ const englishMessages: TranslationMessages = {
             page_out_from_end: 'Cannot go after last page',
             page_out_from_begin: 'Cannot go before page 1',
             page_range_info: '%{offsetBegin}-%{offsetEnd} of %{total}',
+            partial_page_range_info:
+                '%{offsetBegin}-%{offsetEnd} of more than %{offsetEnd}',
+            current_page: 'Page %{page}',
+            page: 'Go to page %{page}',
+            first: 'Go to first page',
+            last: 'Go to last page',
+            next: 'Go to next page',
+            previous: 'Go to previous page',
             page_rows_per_page: 'Rows per page:',
-            next: 'Next',
-            prev: 'Prev',
             skip_nav: 'Skip to content',
         },
         sort: {
@@ -154,6 +162,18 @@ const englishMessages: TranslationMessages = {
             email: 'Must be a valid email',
             oneOf: 'Must be one of: %{options}',
             regex: 'Must match a specific format (regexp): %{pattern}',
+        },
+        saved_queries: {
+            label: 'Saved queries',
+            query_name: 'Query name',
+            new_label: 'Save current query...',
+            new_dialog_title: 'Save current query as',
+            remove_label: 'Remove saved query',
+            remove_label_with_name: 'Remove query "%{name}"',
+            remove_dialog_title: 'Remove saved query?',
+            remove_message:
+                'Are you sure you want to remove that item from your list of saved queries?',
+            help: 'Filter the list and save this query for later',
         },
     },
 };

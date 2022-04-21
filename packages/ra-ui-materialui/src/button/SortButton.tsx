@@ -8,14 +8,15 @@ import {
     IconButton,
     useMediaQuery,
     Theme,
-} from '@material-ui/core';
-import SortIcon from '@material-ui/icons/Sort';
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import { shallowEqual } from 'react-redux';
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import SortIcon from '@mui/icons-material/Sort';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import {
     useListSortContext,
     useTranslate,
     getFieldLabelTranslationArgs,
+    shallowEqual,
 } from 'ra-core';
 
 /**
@@ -35,20 +36,20 @@ import {
  * import * as React from 'react';
  * import { TopToolbar, SortButton, CreateButton, ExportButton } from 'react-admin';
  *
- * const ListActions = props => (
+ * const ListActions = () => (
  *     <TopToolbar>
  *         <SortButton fields={['reference', 'sales', 'stock']} />
- *         <CreateButton basePath={props.basePath} />
+ *         <CreateButton />
  *         <ExportButton />
  *     </TopToolbar>
  * );
  */
 const SortButton = (props: SortButtonProps) => {
     const { fields, label = 'ra.sort.sort_by', icon = defaultIcon } = props;
-    const { resource, currentSort, setSort } = useListSortContext();
+    const { resource, sort, setSort } = useListSortContext();
     const translate = useTranslate();
     const isXSmall = useMediaQuery((theme: Theme) =>
-        theme.breakpoints.down('xs')
+        theme.breakpoints.down('sm')
     );
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -63,12 +64,10 @@ const SortButton = (props: SortButtonProps) => {
         event: React.MouseEvent<HTMLLIElement, MouseEvent>
     ) => {
         const field = event.currentTarget.dataset.sort;
-        setSort(
+        setSort({
             field,
-            field === currentSort.field
-                ? inverseOrder(currentSort.order)
-                : 'ASC'
-        );
+            order: field === sort.field ? inverseOrder(sort.order) : 'ASC',
+        });
         setAnchorEl(null);
     };
 
@@ -76,10 +75,10 @@ const SortButton = (props: SortButtonProps) => {
         field: translate(
             ...getFieldLabelTranslationArgs({
                 resource,
-                source: currentSort.field,
+                source: sort.field,
             })
         ),
-        order: translate(`ra.sort.${currentSort.order}`),
+        order: translate(`ra.sort.${sort.order}`),
         _: label,
     });
 
@@ -91,12 +90,13 @@ const SortButton = (props: SortButtonProps) => {
                         aria-label={buttonLabel}
                         color="primary"
                         onClick={handleClick}
+                        size="large"
                     >
                         {icon}
                     </IconButton>
                 </Tooltip>
             ) : (
-                <Button
+                <StyledButton
                     aria-controls="simple-menu"
                     aria-haspopup="true"
                     color="primary"
@@ -106,7 +106,7 @@ const SortButton = (props: SortButtonProps) => {
                     size="small"
                 >
                     {buttonLabel}
-                </Button>
+                </StyledButton>
             )}
             <Menu
                 id="simple-menu"
@@ -129,8 +129,8 @@ const SortButton = (props: SortButtonProps) => {
                         )}{' '}
                         {translate(
                             `ra.sort.${
-                                currentSort.field === field
-                                    ? inverseOrder(currentSort.order)
+                                sort.field === field
+                                    ? inverseOrder(sort.order)
                                     : 'ASC'
                             }`
                         )}
@@ -153,5 +153,16 @@ export interface SortButtonProps {
     label?: string;
     icon?: ReactElement;
 }
+
+const StyledButton = styled(Button, {
+    name: 'RaSortButton',
+    overridesResolver: (props, styles) => styles.root,
+})({
+    '&.MuiButton-sizeSmall': {
+        // fix for icon misalignment on small buttons, see https://github.com/mui/material-ui/pull/30240
+        lineHeight: 1.5,
+    },
+    '& .MuiButton-endIcon': { ml: 0 },
+});
 
 export default memo(SortButton, arePropsEqual);

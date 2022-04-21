@@ -1,68 +1,45 @@
 import * as React from 'react';
-import { ReactNode } from 'react';
+import { ReactNode, createElement } from 'react';
+import { styled } from '@mui/material/styles';
 import PropTypes from 'prop-types';
-import { shallowEqual, useSelector } from 'react-redux';
 import lodashGet from 'lodash/get';
-// @ts-ignore
-import { makeStyles } from '@material-ui/core/styles';
-import DefaultIcon from '@material-ui/icons/ViewList';
-import classnames from 'classnames';
-import { useGetResourceLabel, getResources, ReduxState } from 'ra-core';
+import DefaultIcon from '@mui/icons-material/ViewList';
+import clsx from 'clsx';
+import {
+    useResourceDefinitions,
+    useGetResourceLabel,
+    useCreatePath,
+} from 'ra-core';
 
-import DashboardMenuItem from './DashboardMenuItem';
-import MenuItemLink from './MenuItemLink';
+import { DRAWER_WIDTH, CLOSED_DRAWER_WIDTH } from './Sidebar';
+import { useSidebarState } from './useSidebarState';
+import { DashboardMenuItem } from './DashboardMenuItem';
+import { MenuItemLink } from './MenuItemLink';
 
-export const MENU_WIDTH = 240;
-export const CLOSED_MENU_WIDTH = 55;
-
-const useStyles = makeStyles(
-    theme => ({
-        main: {
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            marginTop: '0.5em',
-            marginBottom: '1em',
-            [theme.breakpoints.only('xs')]: {
-                marginTop: 0,
-            },
-            transition: theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.leavingScreen,
-            }),
-        },
-        open: {
-            width: lodashGet(theme, 'menu.width', MENU_WIDTH),
-        },
-        closed: {
-            width: lodashGet(theme, 'menu.closedWidth', CLOSED_MENU_WIDTH),
-        },
-    }),
-    { name: 'RaMenu' }
-);
-
-const Menu = (props: MenuProps) => {
-    const resources = useSelector(getResources, shallowEqual) as Array<any>;
+export const Menu = (props: MenuProps) => {
+    const resources = useResourceDefinitions();
     const getResourceLabel = useGetResourceLabel();
+    const createPath = useCreatePath();
     const {
         hasDashboard,
         dense,
         children = (
             <>
                 {hasDashboard && <DashboardMenuItem dense={dense} />}
-                {resources
-                    .filter(r => r.hasList)
-                    .map(resource => (
+                {Object.keys(resources)
+                    .filter(name => resources[name].hasList)
+                    .map(name => (
                         <MenuItemLink
-                            key={resource.name}
-                            to={{
-                                pathname: `/${resource.name}`,
-                                state: { _scrollToTop: true },
-                            }}
-                            primaryText={getResourceLabel(resource.name, 2)}
+                            key={name}
+                            to={createPath({
+                                resource: name,
+                                type: 'list',
+                            })}
+                            state={{ _scrollToTop: true }}
+                            primaryText={getResourceLabel(name, 2)}
                             leftIcon={
-                                resource.icon ? (
-                                    <resource.icon />
+                                resources[name].icon ? (
+                                    createElement(resources[name].icon)
                                 ) : (
                                     <DefaultIcon />
                                 )
@@ -72,59 +49,70 @@ const Menu = (props: MenuProps) => {
                     ))}
             </>
         ),
-        classes: classesOverride,
         className,
-        onMenuClick,
-        logout,
         ...rest
     } = props;
-    const classes = useStyles(props);
-    const open = useSelector((state: ReduxState) => state.admin.ui.sidebarOpen);
+
+    const [open] = useSidebarState();
 
     return (
-        <div
-            className={classnames(
-                classes.main,
+        <Root
+            className={clsx(
                 {
-                    [classes.open]: open,
-                    [classes.closed]: !open,
+                    [MenuClasses.open]: open,
+                    [MenuClasses.closed]: !open,
                 },
                 className
             )}
             {...rest}
         >
             {children}
-        </div>
+        </Root>
     );
 };
 
 export interface MenuProps {
     children?: ReactNode;
-    classes?: object;
     className?: string;
     dense?: boolean;
     hasDashboard?: boolean;
-    /**
-     * @deprecated
-     */
-    logout?: ReactNode;
-    /**
-     * @deprecated
-     */
-    onMenuClick?: () => void;
 }
 
 Menu.propTypes = {
-    classes: PropTypes.object,
     className: PropTypes.string,
     dense: PropTypes.bool,
     hasDashboard: PropTypes.bool,
-    logout: PropTypes.element,
-    onMenuClick: PropTypes.func,
 };
 
-Menu.defaultProps = {
-    onMenuClick: () => null,
+const PREFIX = 'RaMenu';
+
+export const MenuClasses = {
+    open: `${PREFIX}-open`,
+    closed: `${PREFIX}-closed`,
 };
 
-export default Menu;
+const Root = styled('div', {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    marginTop: '0.5em',
+    marginBottom: '1em',
+    [theme.breakpoints.only('xs')]: {
+        marginTop: 0,
+    },
+    transition: theme.transitions.create('width', {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.leavingScreen,
+    }),
+
+    [`&.${MenuClasses.open}`]: {
+        width: lodashGet(theme, 'sidebar.width', DRAWER_WIDTH),
+    },
+
+    [`&.${MenuClasses.closed}`]: {
+        width: lodashGet(theme, 'sidebar.closedWidth', CLOSED_DRAWER_WIDTH),
+    },
+}));

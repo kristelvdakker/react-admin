@@ -1,23 +1,13 @@
 import * as React from 'react';
-import Button from '@material-ui/core/Button';
-import { makeStyles } from '@material-ui/core/styles';
+import { Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useTranslate } from 'react-admin';
 import { stringify } from 'query-string';
 
 import visitors from '../visitors';
 
-const useStyles = makeStyles({
-    icon: { paddingRight: '0.5em' },
-    link: {
-        display: 'inline-flex',
-        alignItems: 'center',
-    },
-});
-
 const LinkToRelatedCustomers = ({ segment }: { segment: string }) => {
     const translate = useTranslate();
-    const classes = useStyles();
     return (
         <Button
             size="small"
@@ -29,9 +19,13 @@ const LinkToRelatedCustomers = ({ segment }: { segment: string }) => {
                     filter: JSON.stringify({ groups: segment }),
                 }),
             }}
-            className={classes.link}
+            state={{ _scrollToTop: true }}
+            sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+            }}
         >
-            <visitors.icon className={classes.icon} />
+            <visitors.icon sx={{ paddingRight: '0.5em' }} />
             {translate('resources.segments.fields.customers')}
         </Button>
     );

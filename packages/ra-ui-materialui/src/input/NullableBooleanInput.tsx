@@ -1,52 +1,24 @@
 import * as React from 'react';
+import { styled } from '@mui/material/styles';
 import PropTypes from 'prop-types';
-import TextField, { TextFieldProps } from '@material-ui/core/TextField';
-import MenuItem from '@material-ui/core/MenuItem';
-import { makeStyles } from '@material-ui/core/styles';
-import classnames from 'classnames';
-import { useInput, useTranslate, FieldTitle, InputProps } from 'ra-core';
+import TextField, { TextFieldProps } from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import clsx from 'clsx';
+import { useInput, useTranslate, FieldTitle } from 'ra-core';
 
-import sanitizeInputRestProps from './sanitizeInputRestProps';
-import InputHelperText from './InputHelperText';
+import { CommonInputProps } from './CommonInputProps';
+import { sanitizeInputRestProps } from './sanitizeInputRestProps';
+import { InputHelperText } from './InputHelperText';
 
-const useStyles = makeStyles(
-    theme => ({
-        input: { width: theme.spacing(16) },
-    }),
-    { name: 'RaNullableBooleanInput' }
-);
-
-const getBooleanFromString = (value: string): boolean | null => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return null;
-};
-
-const getStringFromBoolean = (value?: boolean | null): string => {
-    if (value === true) return 'true';
-    if (value === false) return 'false';
-    return '';
-};
-
-export type NullableBooleanInputProps = InputProps<TextFieldProps> &
-    Omit<TextFieldProps, 'label' | 'helperText'> & {
-        nullLabel?: string;
-        falseLabel?: string;
-        trueLabel?: string;
-    };
-
-const NullableBooleanInput = (props: NullableBooleanInputProps) => {
+export const NullableBooleanInput = (props: NullableBooleanInputProps) => {
     const {
         className,
-        classes: classesOverride,
         format = getStringFromBoolean,
         helperText,
         label,
         margin = 'dense',
         onBlur,
         onChange,
-        onFocus,
-        options,
         parse = getBooleanFromString,
         resource,
         source,
@@ -57,20 +29,20 @@ const NullableBooleanInput = (props: NullableBooleanInputProps) => {
         trueLabel = 'ra.boolean.true',
         ...rest
     } = props;
-    const classes = useStyles(props);
+
     const translate = useTranslate();
 
     const {
+        field,
+        fieldState: { error, invalid, isTouched },
+        formState: { isSubmitted },
         id,
-        input,
         isRequired,
-        meta: { error, submitError, touched },
     } = useInput({
         format,
+        parse,
         onBlur,
         onChange,
-        onFocus,
-        parse,
         resource,
         source,
         validate,
@@ -78,9 +50,16 @@ const NullableBooleanInput = (props: NullableBooleanInputProps) => {
     });
 
     return (
-        <TextField
+        <StyledTextField
             id={id}
-            {...input}
+            size="small"
+            {...field}
+            className={clsx(
+                'ra-input',
+                `ra-input-${source}`,
+                NullableBooleanInputClasses.input,
+                className
+            )}
             select
             margin={margin}
             label={
@@ -91,23 +70,21 @@ const NullableBooleanInput = (props: NullableBooleanInputProps) => {
                     isRequired={isRequired}
                 />
             }
-            error={!!(touched && (error || submitError))}
+            error={(isTouched || isSubmitted) && invalid}
             helperText={
                 <InputHelperText
-                    touched={touched}
-                    error={error || submitError}
+                    touched={isTouched || isSubmitted}
+                    error={error?.message}
                     helperText={helperText}
                 />
             }
-            className={classnames(classes.input, className)}
             variant={variant}
-            {...options}
             {...sanitizeInputRestProps(rest)}
         >
             <MenuItem value="">{translate(nullLabel)}</MenuItem>
             <MenuItem value="false">{translate(falseLabel)}</MenuItem>
             <MenuItem value="true">{translate(trueLabel)}</MenuItem>
-        </TextField>
+        </StyledTextField>
     );
 };
 
@@ -121,4 +98,36 @@ NullableBooleanInput.propTypes = {
     trueLabel: PropTypes.string,
 };
 
-export default NullableBooleanInput;
+const PREFIX = 'RaNullableBooleanInput';
+
+export const NullableBooleanInputClasses = {
+    input: `${PREFIX}-input`,
+};
+
+const StyledTextField = styled(TextField, {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme, fullWidth }) => ({
+    [`&.${NullableBooleanInputClasses.input}`]: {
+        width: fullWidth ? '100%' : theme.spacing(16),
+    },
+}));
+
+const getBooleanFromString = (value: string): boolean | null => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return null;
+};
+
+const getStringFromBoolean = (value?: boolean | null): string => {
+    if (value === true) return 'true';
+    if (value === false) return 'false';
+    return '';
+};
+
+export type NullableBooleanInputProps = CommonInputProps &
+    Omit<TextFieldProps, 'label' | 'helperText'> & {
+        nullLabel?: string;
+        falseLabel?: string;
+        trueLabel?: string;
+    };

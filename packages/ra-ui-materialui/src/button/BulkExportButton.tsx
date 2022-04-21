@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCallback } from 'react';
 import PropTypes from 'prop-types';
-import DownloadIcon from '@material-ui/icons/GetApp';
+import DownloadIcon from '@mui/icons-material/GetApp';
 import {
     fetchRelatedRecords,
     useDataProvider,
@@ -11,7 +11,7 @@ import {
     useListContext,
 } from 'ra-core';
 
-import Button, { ButtonProps } from './Button';
+import { Button, ButtonProps } from './Button';
 
 /**
  * Export the selected rows
@@ -23,10 +23,10 @@ import Button, { ButtonProps } from './Button';
  * import { Fragment } from 'react';
  * import { BulkDeleteButton, BulkExportButton } from 'react-admin';
  *
- * const PostBulkActionButtons = ({ basePath }) => (
+ * const PostBulkActionButtons = () => (
  *     <Fragment>
  *         <BulkExportButton />
- *         <BulkDeleteButton basePath={basePath} />
+ *         <BulkDeleteButton />
  *     </Fragment>
  * );
  *
@@ -36,7 +36,7 @@ import Button, { ButtonProps } from './Button';
  *     </List>
  * );
  */
-const BulkExportButton = (props: BulkExportButtonProps) => {
+export const BulkExportButton = (props: BulkExportButtonProps) => {
     const {
         onClick,
         label = 'ra.action.export',
@@ -92,7 +92,6 @@ const BulkExportButton = (props: BulkExportButtonProps) => {
 const defaultIcon = <DownloadIcon />;
 
 const sanitizeRestProps = ({
-    basePath,
     filterValues,
     selectedIds,
     resource,
@@ -100,7 +99,6 @@ const sanitizeRestProps = ({
 }: Omit<BulkExportButtonProps, 'exporter' | 'label'>) => rest;
 
 interface Props {
-    basePath?: string;
     exporter?: Exporter;
     filterValues?: any;
     icon?: JSX.Element;
@@ -113,12 +111,9 @@ interface Props {
 export type BulkExportButtonProps = Props & ButtonProps;
 
 BulkExportButton.propTypes = {
-    basePath: PropTypes.string,
     exporter: PropTypes.func,
     label: PropTypes.string,
     resource: PropTypes.string,
     selectedIds: PropTypes.arrayOf(PropTypes.any),
     icon: PropTypes.element,
 };
-
-export default BulkExportButton;

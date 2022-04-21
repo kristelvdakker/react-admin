@@ -1,40 +1,39 @@
 import * as React from 'react';
+import { SxProps, Typography } from '@mui/material';
 import { memo } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 
-import { FieldProps } from 'react-admin';
+import { FieldProps, useRecordContext } from 'react-admin';
 import AvatarField from './AvatarField';
 import { Customer } from '../types';
 
-const useStyles = makeStyles(theme => ({
-    root: {
-        display: 'flex',
-        flexWrap: 'nowrap',
-        alignItems: 'center',
-    },
-    avatar: {
-        marginRight: theme.spacing(1),
-        marginTop: -theme.spacing(0.5),
-        marginBottom: -theme.spacing(0.5),
-    },
-}));
-
 interface Props extends FieldProps<Customer> {
     size?: string;
+    sx?: SxProps;
 }
 
 const FullNameField = (props: Props) => {
-    const { record, size } = props;
-    const classes = useStyles();
+    const { size } = props;
+    const record = useRecordContext<Customer>();
     return record ? (
-        <div className={classes.root}>
+        <Typography
+            variant="body2"
+            display="flex"
+            flexWrap="nowrap"
+            alignItems="center"
+            component="div"
+            sx={props.sx}
+        >
             <AvatarField
-                className={classes.avatar}
                 record={record}
                 size={size}
+                sx={{
+                    mr: 1,
+                    mt: -0.5,
+                    mb: -0.5,
+                }}
             />
             {record.first_name} {record.last_name}
-        </div>
+        </Typography>
     ) : null;
 };
 

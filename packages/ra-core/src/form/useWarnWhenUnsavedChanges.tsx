@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { useFormState, UseFormStateParams } from 'react-final-form';
-import { useHistory } from 'react-router-dom';
-
+import { useContext, useEffect, useRef } from 'react';
+import { useFormState, Control } from 'react-hook-form';
+import { UNSAFE_NavigationContext, useLocation } from 'react-router-dom';
+import { History, Transition } from 'history';
 import { useTranslate } from '../i18n';
 
 /**
@@ -9,53 +9,50 @@ import { useTranslate } from '../i18n';
  * - If the user confirms, the navigation continues and the changes are lost.
  * - If the user cancels, the navigation is cancelled and the changes are kept.
  */
-const useWarnWhenUnsavedChanges = (
+export const useWarnWhenUnsavedChanges = (
     enable: boolean,
-    formRootPathname?: string
+    formRootPathname?: string,
+    control?: Control
 ) => {
-    const history = useHistory();
+    // react-router v6 does not yet provide a way to block navigation
+    // This is planned for a future release
+    // See https://github.com/remix-run/react-router/issues/8139
+    const navigator = useContext(UNSAFE_NavigationContext).navigator as History;
+    const location = useLocation();
     const translate = useTranslate();
-    const { pristine, submitSucceeded, submitting } = useFormState(
-        UseFormStateSubscription
+    const { isSubmitSuccessful, isSubmitting, dirtyFields } = useFormState(
+        control ? { control } : undefined
     );
-    const initialLocation = useRef(
-        formRootPathname || history.location.pathname
-    );
+    const isDirty = Object.keys(dirtyFields).length > 0;
+    const initialLocation = useRef(formRootPathname || location.pathname);
 
     useEffect(() => {
-        if (!enable) {
-            return;
-        }
+        if (!enable || !isDirty) return;
 
-        const release = history.block(location => {
-            const isInsideForm = location.pathname.startsWith(
+        let unblock = navigator.block((tx: Transition) => {
+            const newLocationIsInsideForm = tx.location.pathname.startsWith(
                 initialLocation.current
             );
 
-            if (!pristine && !isInsideForm && !submitSucceeded && !submitting) {
-                return translate('ra.message.unsaved_changes');
+            if (
+                !isSubmitting &&
+                (newLocationIsInsideForm ||
+                    isSubmitSuccessful ||
+                    window.confirm(translate('ra.message.unsaved_changes')))
+            ) {
+                unblock();
+                tx.retry();
             }
-
-            return undefined;
         });
 
-        return () => {
-            if (release) {
-                release();
-            }
-        };
-    }, [pristine, enable, history, translate, submitSucceeded, submitting]);
+        return unblock;
+    }, [
+        enable,
+        location,
+        navigator,
+        isDirty,
+        isSubmitting,
+        isSubmitSuccessful,
+        translate,
+    ]);
 };
-
-const UseFormStateSubscription: UseFormStateParams = {
-    // For some reason, subscribing only to pristine does not rerender when a field become dirty
-    // because it has a defaultValue (not initialValue as setting an initialValue does not make the field dirty)
-    subscription: {
-        pristine: true,
-        dirtyFields: true,
-        submitSucceeded: true,
-        submitting: true,
-    },
-};
-
-export default useWarnWhenUnsavedChanges;

@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { Children, cloneElement, memo } from 'react';
+import { FC } from 'react';
+import { styled } from '@mui/material/styles';
+import { Children, memo } from 'react';
 import PropTypes from 'prop-types';
 import {
     AppBar as MuiAppBar,
@@ -8,32 +10,28 @@ import {
     Typography,
     useMediaQuery,
     Theme,
-} from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+} from '@mui/material';
 import { ComponentPropType } from 'ra-core';
 
 import { SidebarToggleButton } from './SidebarToggleButton';
-import LoadingIndicator from './LoadingIndicator';
-import DefaultUserMenu from './UserMenu';
-import HideOnScroll from './HideOnScroll';
-import { ClassesOverride } from '../types';
+import { LoadingIndicator } from './LoadingIndicator';
+import { UserMenu } from './UserMenu';
+import { HideOnScroll } from './HideOnScroll';
 
 /**
  * The AppBar component renders a custom MuiAppBar.
  *
  * @param {Object} props
- * @param {ReactNode} props.children React node/s to be render as children of the AppBar
- * @param {Object} props.classes CSS class names
+ * @param {ReactNode} props.children React node/s to be rendered as children of the AppBar
  * @param {string} props.className CSS class applied to the MuiAppBar component
  * @param {string} props.color The color of the AppBar
- * @param {Component} props.logout The logout button component that will be pass to the UserMenu component
  * @param {boolean} props.open State of the <Admin/> Sidebar
  * @param {Element | boolean} props.userMenu A custom user menu component for the AppBar. <UserMenu/> component by default. Pass false to disable.
  *
  * @example
  *
  * const MyAppBar = props => {
- *   const classes = useStyles();
+
  *   return (
  *       <AppBar {...props}>
  *           <Typography
@@ -49,51 +47,46 @@ import { ClassesOverride } from '../types';
  * @example Without a user menu
  *
  * const MyAppBar = props => {
- *   const classes = useStyles();
+
  *   return (
  *       <AppBar {...props} userMenu={false} />
  *   );
  *};
  */
-const AppBar = (props: AppBarProps): JSX.Element => {
+export const AppBar: FC<AppBarProps> = memo(props => {
     const {
         children,
-        classes: classesOverride,
         className,
         color = 'secondary',
-        logout,
         open,
         title,
-        userMenu,
-        container: Container,
+        userMenu = DefaultUserMenu,
+        container: Container = HideOnScroll,
         ...rest
     } = props;
-    const classes = useStyles(props);
-    const sidebarToggleButtonClasses = {
-        menuButtonIconClosed: classes.menuButtonIconClosed,
-        menuButtonIconOpen: classes.menuButtonIconOpen,
-    };
+
     const isXSmall = useMediaQuery<Theme>(theme =>
-        theme.breakpoints.down('xs')
+        theme.breakpoints.down('sm')
     );
 
     return (
-        <Container>
-            <MuiAppBar className={className} color={color} {...rest}>
+        <Container className={className}>
+            <StyledAppBar
+                className={AppBarClasses.appBar}
+                color={color}
+                {...rest}
+            >
                 <Toolbar
                     disableGutters
                     variant={isXSmall ? 'regular' : 'dense'}
-                    className={classes.toolbar}
+                    className={AppBarClasses.toolbar}
                 >
-                    <SidebarToggleButton
-                        className={classes.menuButton}
-                        classes={sidebarToggleButtonClasses}
-                    />
+                    <SidebarToggleButton className={AppBarClasses.menuButton} />
                     {Children.count(children) === 0 ? (
                         <Typography
                             variant="h6"
                             color="inherit"
-                            className={classes.title}
+                            className={AppBarClasses.title}
                             id="react-admin-title"
                         />
                     ) : (
@@ -102,21 +95,19 @@ const AppBar = (props: AppBarProps): JSX.Element => {
                     <LoadingIndicator />
                     {typeof userMenu === 'boolean' ? (
                         userMenu === true ? (
-                            <DefaultUserMenu logout={logout} />
+                            <UserMenu />
                         ) : null
                     ) : (
-                        cloneElement(userMenu, { logout })
+                        userMenu
                     )}
                 </Toolbar>
-            </MuiAppBar>
+            </StyledAppBar>
         </Container>
     );
-};
+});
 
 AppBar.propTypes = {
     children: PropTypes.node,
-    // @ts-ignore
-    classes: PropTypes.object,
     className: PropTypes.string,
     color: PropTypes.oneOf([
         'default',
@@ -126,46 +117,49 @@ AppBar.propTypes = {
         'transparent',
     ]),
     container: ComponentPropType,
-    logout: PropTypes.element,
     // @deprecated
     open: PropTypes.bool,
     userMenu: PropTypes.oneOfType([PropTypes.element, PropTypes.bool]),
 };
 
-AppBar.defaultProps = {
-    userMenu: <DefaultUserMenu />,
-    container: HideOnScroll,
-};
+const DefaultUserMenu = <UserMenu />;
 
-const useStyles = makeStyles(
-    theme => ({
-        toolbar: {
-            paddingRight: 24,
-        },
-        menuButton: {
-            marginLeft: '0.2em',
-            marginRight: '0.2em',
-        },
-        menuButtonIconClosed: {},
-        menuButtonIconOpen: {},
-        title: {
-            flex: 1,
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-        },
-    }),
-    { name: 'RaAppBar' }
-);
-
-export interface AppBarProps extends Omit<MuiAppBarProps, 'title' | 'classes'> {
-    classes?: ClassesOverride<typeof useStyles>;
+export interface AppBarProps extends Omit<MuiAppBarProps, 'title'> {
     container?: React.ElementType<any>;
-    logout?: React.ReactNode;
     // @deprecated
     open?: boolean;
     title?: string | JSX.Element;
     userMenu?: JSX.Element | boolean;
 }
 
-export default memo(AppBar);
+const PREFIX = 'RaAppBar';
+
+export const AppBarClasses = {
+    appBar: `${PREFIX}-appBar`,
+    toolbar: `${PREFIX}-toolbar`,
+    menuButton: `${PREFIX}-menuButton`,
+    menuButtonIconClosed: `${PREFIX}-menuButtonIconClosed`,
+    menuButtonIconOpen: `${PREFIX}-menuButtonIconOpen`,
+    title: `${PREFIX}-title`,
+};
+
+const StyledAppBar = styled(MuiAppBar, {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})(({ theme }) => ({
+    [`& .${AppBarClasses.toolbar}`]: {
+        paddingRight: 24,
+    },
+
+    [`& .${AppBarClasses.menuButton}`]: {
+        marginLeft: '0.2em',
+        marginRight: '0.2em',
+    },
+
+    [`& .${AppBarClasses.title}`]: {
+        flex: 1,
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+    },
+}));

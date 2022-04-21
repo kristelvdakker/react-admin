@@ -4,14 +4,12 @@ import {
     ExportButton,
     FilterButton,
     List,
-    ListProps,
     SearchInput,
     SelectInput,
     TopToolbar,
     useGetIdentity,
 } from 'react-admin';
-import { Route } from 'react-router';
-import { makeStyles } from '@material-ui/core/styles';
+import { matchPath, useLocation } from 'react-router';
 
 import { DealListContent } from './DealListContent';
 import { DealCreate } from './DealCreate';
@@ -19,12 +17,15 @@ import { DealShow } from './DealShow';
 import { OnlyMineInput } from './OnlyMineInput';
 import { typeChoices } from './types';
 
-export const DealList = (props: ListProps) => {
+export const DealList = () => {
     const { identity } = useGetIdentity();
-    return identity ? (
+    const location = useLocation();
+    const matchCreate = matchPath('/deals/create', location.pathname);
+    const matchShow = matchPath('/deals/:id/show', location.pathname);
+    if (!identity) return null;
+    return (
         <>
             <List
-                {...props}
                 perPage={100}
                 sort={{ field: 'index', order: 'ASC' }}
                 filters={dealFilters}
@@ -35,18 +36,10 @@ export const DealList = (props: ListProps) => {
             >
                 <DealListContent />
             </List>
-            <Route path="/deals/create">
-                {({ match }) => <DealCreate open={!!match} />}
-            </Route>
-            <Route path="/deals/:id/show">
-                {({ match }) =>
-                    !!match ? (
-                        <DealShow open={!!match} id={match?.params?.id} />
-                    ) : null
-                }
-            </Route>
+            <DealCreate open={!!matchCreate} />
+            <DealShow open={!!matchShow} id={matchShow?.params.id} />
         </>
-    ) : null;
+    );
 };
 
 const dealFilters = [
@@ -55,22 +48,15 @@ const dealFilters = [
     <SelectInput source="type" choices={typeChoices} />,
 ];
 
-const useActionStyles = makeStyles(theme => ({
-    createButton: {
-        marginLeft: theme.spacing(2),
-    },
-}));
 const DealActions = () => {
-    const classes = useActionStyles();
     return (
         <TopToolbar>
             <FilterButton />
             <ExportButton />
             <CreateButton
-                basePath="/deals"
                 variant="contained"
                 label="New Deal"
-                className={classes.createButton}
+                sx={{ marginLeft: 2 }}
             />
         </TopToolbar>
     );

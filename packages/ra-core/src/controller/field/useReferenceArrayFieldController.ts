@@ -1,18 +1,15 @@
 import get from 'lodash/get';
 
-import { Record, SortPayload } from '../../types';
-import { useGetMany } from '../../dataProvider';
-import { ListControllerProps } from '../useListController';
-import { useNotify } from '../../sideEffect';
-import { useResourceContext } from '../../core';
-import { useList } from '../useList';
+import { RaRecord, SortPayload } from '../../types';
+import { useGetManyAggregate } from '../../dataProvider';
+import { ListControllerResult, useList } from '../list';
+import { useNotify } from '../../notification';
 
-interface Option {
-    basePath?: string;
+export interface UseReferenceArrayFieldControllerParams {
     filter?: any;
     page?: number;
     perPage?: number;
-    record?: Record;
+    record?: RaRecord;
     reference: string;
     resource: string;
     sort?: SortPayload;
@@ -29,8 +26,7 @@ const defaultSort = { field: null, order: null };
  *
  * @example
  *
- * const { ids, data, error, loaded, loading, referenceBasePath } = useReferenceArrayFieldController({
- *      basePath: 'resource';
+ * const { data, error, isFetching, isLoading } = useReferenceArrayFieldController({
  *      record: { referenceIds: ['id1', 'id2']};
  *      reference: 'reference';
  *      resource: 'resource';
@@ -38,7 +34,6 @@ const defaultSort = { field: null, order: null };
  * });
  *
  * @param {Object} props
- * @param {string} props.basePath basepath to current resource
  * @param {Object} props.record The current resource record
  * @param {string} props.reference The linked resource name
  * @param {string} props.resource The current resource name
@@ -46,13 +41,12 @@ const defaultSort = { field: null, order: null };
  *
  * @param {Props} props
  *
- * @returns {ReferenceArrayProps} The reference props
+ * @returns {ListControllerResult} The reference props
  */
-const useReferenceArrayFieldController = (
-    props: Option
-): ListControllerProps => {
+export const useReferenceArrayFieldController = (
+    props: UseReferenceArrayFieldControllerParams
+): ListControllerResult => {
     const {
-        basePath,
         filter = defaultFilter,
         page = 1,
         perPage = 1000,
@@ -61,14 +55,13 @@ const useReferenceArrayFieldController = (
         sort = defaultSort,
         source,
     } = props;
-    const resource = useResourceContext(props);
     const notify = useNotify();
     const ids = get(record, source) || emptyArray;
-    const { data, error, loading, loaded, refetch } = useGetMany(
+    const { data, error, isLoading, isFetching, refetch } = useGetManyAggregate(
         reference,
-        ids,
+        { ids },
         {
-            onFailure: error =>
+            onError: error =>
                 notify(
                     typeof error === 'string'
                         ? error
@@ -92,24 +85,17 @@ const useReferenceArrayFieldController = (
         data,
         error,
         filter,
-        ids,
-        loaded,
-        loading,
+        isFetching,
+        isLoading,
         page,
         perPage,
         sort,
     });
 
     return {
-        basePath: basePath
-            ? basePath.replace(resource, reference)
-            : `/${reference}`,
         ...listProps,
         defaultTitle: null,
-        hasCreate: false,
         refetch,
         resource: reference,
     };
 };
-
-export default useReferenceArrayFieldController;

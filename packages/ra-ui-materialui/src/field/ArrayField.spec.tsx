@@ -1,39 +1,53 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { TestContext } from 'ra-test';
+import {
+    CoreAdminContext,
+    ResourceContextProvider,
+    testDataProvider,
+} from 'ra-core';
+import { ThemeProvider, createTheme } from '@mui/material';
 
-import ArrayField from './ArrayField';
-import NumberField from './NumberField';
-import TextField from './TextField';
-import Datagrid from '../list/datagrid/Datagrid';
-import SimpleList from '../list/SimpleList';
+import { ArrayField } from './ArrayField';
+import { NumberField } from './NumberField';
+import { TextField } from './TextField';
+import { Datagrid } from '../list';
+import { SimpleList } from '../list';
 
 describe('<ArrayField />', () => {
-    const currentSort = { field: 'id', order: 'ASC' };
+    const sort = { field: 'id', order: 'ASC' };
 
     const DummyIterator = props => (
-        <Datagrid {...props} currentSort={currentSort}>
+        <Datagrid {...props} sort={sort}>
             <NumberField source="id" />
             <TextField source="foo" />
         </Datagrid>
     );
 
+    const Wrapper = ({ children }) => (
+        <ThemeProvider theme={createTheme()}>
+            <CoreAdminContext dataProvider={testDataProvider()}>
+                <ResourceContextProvider value="posts">
+                    {children}
+                </ResourceContextProvider>
+            </CoreAdminContext>
+        </ThemeProvider>
+    );
+
     it('should not fail for empty records', () => {
         render(
-            <TestContext>
-                <ArrayField source="arr" resource="posts" record={{ id: 123 }}>
+            <Wrapper>
+                <ArrayField source="arr" record={{ id: 123 }}>
                     <DummyIterator />
                 </ArrayField>
-            </TestContext>
+            </Wrapper>
         );
     });
 
     it('should render the alternative empty component', () => {
         const { queryByText } = render(
-            <TestContext>
+            <Wrapper>
                 <ArrayField
                     source="arr"
-                    resource="posts"
                     record={{
                         id: 123,
                         arr: [],
@@ -43,17 +57,16 @@ describe('<ArrayField />', () => {
                         <NumberField source="id" />
                     </Datagrid>
                 </ArrayField>
-            </TestContext>
+            </Wrapper>
         );
         expect(queryByText('No posts')).not.toBeNull();
     });
 
     it('should render the <Datagrid> iterator component', () => {
         const { queryByText } = render(
-            <TestContext>
+            <Wrapper>
                 <ArrayField
                     source="arr"
-                    resource="posts"
                     record={{
                         id: 123,
                         arr: [
@@ -64,7 +77,7 @@ describe('<ArrayField />', () => {
                 >
                     <DummyIterator />
                 </ArrayField>
-            </TestContext>
+            </Wrapper>
         );
 
         // Test the datagrid know about the fields
@@ -81,10 +94,9 @@ describe('<ArrayField />', () => {
 
     it('should render the <SimpleList> iterator component', () => {
         const { queryByText } = render(
-            <TestContext>
+            <Wrapper>
                 <ArrayField
                     source="arr"
-                    resource="posts"
                     record={{
                         id: 123,
                         arr: [
@@ -98,7 +110,7 @@ describe('<ArrayField />', () => {
                         secondaryText={record => record.id}
                     />
                 </ArrayField>
-            </TestContext>
+            </Wrapper>
         );
 
         // Test the fields values

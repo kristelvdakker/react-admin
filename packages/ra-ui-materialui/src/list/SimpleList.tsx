@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { styled } from '@mui/material/styles';
 import { isValidElement, ReactNode, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -7,35 +8,27 @@ import {
     ListProps,
     ListItem,
     ListItemAvatar,
+    ListItemButton,
     ListItemIcon,
     ListItemProps,
     ListItemSecondaryAction,
     ListItemText,
-} from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 import {
-    linkToRecord,
+    Identifier,
+    RaRecord,
+    RecordContextProvider,
     sanitizeListRestProps,
     useListContext,
-    Record,
-    RecordMap,
-    Identifier,
-    RecordContextProvider,
+    useResourceContext,
+    useCreatePath,
 } from 'ra-core';
 
-import SimpleListLoading from './SimpleListLoading';
-import { ClassesOverride } from '../types';
-
-const useStyles = makeStyles(
-    {
-        tertiary: { float: 'right', opacity: 0.541176 },
-    },
-    { name: 'RaSimpleList' }
-);
+import { SimpleListLoading } from './SimpleListLoading';
 
 /**
- * The <SimpleList> component renders a list of records as a material-ui <List>.
+ * The <SimpleList> component renders a list of records as a MUI <List>.
  * It is usually used as a child of react-admin's <List> and <ReferenceManyField> components.
  *
  * Also widely used on Mobile.
@@ -68,12 +61,11 @@ const useStyles = makeStyles(
  *     </List>
  * );
  */
-const SimpleList = <RecordType extends Record = Record>(
+export const SimpleList = <RecordType extends RaRecord = any>(
     props: SimpleListProps<RecordType>
 ) => {
     const {
         className,
-        classes: classesOverride,
         hasBulkActions,
         leftAvatar,
         leftIcon,
@@ -86,15 +78,12 @@ const SimpleList = <RecordType extends Record = Record>(
         rowStyle,
         ...rest
     } = props;
-    const { basePath, data, ids, loaded, total } = useListContext<RecordType>(
-        props
-    );
-    const classes = useStyles(props);
+    const { data, isLoading, total } = useListContext<RecordType>(props);
+    const resource = useResourceContext(props);
 
-    if (loaded === false) {
+    if (isLoading === true) {
         return (
             <SimpleListLoading
-                classes={classes}
                 className={className}
                 hasLeftAvatarOrIcon={!!leftIcon || !!leftAvatar}
                 hasRightAvatarOrIcon={!!rightIcon || !!rightAvatar}
@@ -105,10 +94,10 @@ const SimpleList = <RecordType extends Record = Record>(
     }
 
     const renderAvatar = (
-        id: Identifier,
+        record: RecordType,
         avatarCallback: FunctionToElement<RecordType>
     ) => {
-        const avatarValue = avatarCallback(data[id], id);
+        const avatarValue = avatarCallback(record, record.id);
         if (
             typeof avatarValue === 'string' &&
             (avatarValue.startsWith('http') || avatarValue.startsWith('data:'))
@@ -119,92 +108,87 @@ const SimpleList = <RecordType extends Record = Record>(
         }
     };
 
-    return (
-        total > 0 && (
-            <List className={className} {...sanitizeListRestProps(rest)}>
-                {ids.map((id, rowIndex) => (
-                    <RecordContextProvider key={id} value={data[id]}>
-                        <li>
-                            <LinkOrNot
-                                linkType={linkType}
-                                basePath={basePath}
-                                id={id}
-                                record={data[id]}
-                                style={
-                                    rowStyle
-                                        ? rowStyle(data[id], rowIndex)
-                                        : undefined
-                                }
-                            >
-                                {leftIcon && (
-                                    <ListItemIcon>
-                                        {leftIcon(data[id], id)}
-                                    </ListItemIcon>
-                                )}
-                                {leftAvatar && (
-                                    <ListItemAvatar>
-                                        {renderAvatar(id, leftAvatar)}
-                                    </ListItemAvatar>
-                                )}
-                                <ListItemText
-                                    primary={
-                                        <div>
-                                            {isValidElement(primaryText)
-                                                ? primaryText
-                                                : primaryText(data[id], id)}
+    return (total == null && data?.length > 0) || total > 0 ? (
+        <Root className={className} {...sanitizeListRestProps(rest)}>
+            {data.map((record, rowIndex) => (
+                <RecordContextProvider key={record.id} value={record}>
+                    <ListItem disablePadding>
+                        <LinkOrNot
+                            linkType={linkType}
+                            resource={resource}
+                            id={record.id}
+                            record={record}
+                            style={
+                                rowStyle
+                                    ? rowStyle(record, rowIndex)
+                                    : undefined
+                            }
+                        >
+                            {leftIcon && (
+                                <ListItemIcon>
+                                    {leftIcon(record, record.id)}
+                                </ListItemIcon>
+                            )}
+                            {leftAvatar && (
+                                <ListItemAvatar>
+                                    {renderAvatar(record, leftAvatar)}
+                                </ListItemAvatar>
+                            )}
+                            <ListItemText
+                                primary={
+                                    <div>
+                                        {isValidElement(primaryText)
+                                            ? primaryText
+                                            : primaryText(record, record.id)}
 
-                                            {!!tertiaryText &&
-                                                (isValidElement(
-                                                    tertiaryText
-                                                ) ? (
-                                                    tertiaryText
-                                                ) : (
-                                                    <span
-                                                        className={
-                                                            classes.tertiary
-                                                        }
-                                                    >
-                                                        {tertiaryText(
-                                                            data[id],
-                                                            id
-                                                        )}
-                                                    </span>
-                                                ))}
-                                        </div>
-                                    }
-                                    secondary={
-                                        !!secondaryText &&
-                                        (isValidElement(secondaryText)
-                                            ? secondaryText
-                                            : secondaryText(data[id], id))
-                                    }
-                                />
-                                {(rightAvatar || rightIcon) && (
-                                    <ListItemSecondaryAction>
-                                        {rightAvatar && (
-                                            <Avatar>
-                                                {renderAvatar(id, rightAvatar)}
-                                            </Avatar>
-                                        )}
-                                        {rightIcon && (
-                                            <ListItemIcon>
-                                                {rightIcon(data[id], id)}
-                                            </ListItemIcon>
-                                        )}
-                                    </ListItemSecondaryAction>
-                                )}
-                            </LinkOrNot>
-                        </li>
-                    </RecordContextProvider>
-                ))}
-            </List>
-        )
-    );
+                                        {!!tertiaryText &&
+                                            (isValidElement(tertiaryText) ? (
+                                                tertiaryText
+                                            ) : (
+                                                <span
+                                                    className={
+                                                        SimpleListClasses.tertiary
+                                                    }
+                                                >
+                                                    {tertiaryText(
+                                                        record,
+                                                        record.id
+                                                    )}
+                                                </span>
+                                            ))}
+                                    </div>
+                                }
+                                secondary={
+                                    !!secondaryText &&
+                                    (isValidElement(secondaryText)
+                                        ? secondaryText
+                                        : secondaryText(record, record.id))
+                                }
+                            />
+                            {(rightAvatar || rightIcon) && (
+                                <ListItemSecondaryAction>
+                                    {rightAvatar && (
+                                        <Avatar>
+                                            {renderAvatar(record, rightAvatar)}
+                                        </Avatar>
+                                    )}
+                                    {rightIcon && (
+                                        <ListItemIcon>
+                                            {rightIcon(record, record.id)}
+                                        </ListItemIcon>
+                                    )}
+                                </ListItemSecondaryAction>
+                            )}
+                        </LinkOrNot>
+                    </ListItem>
+                </RecordContextProvider>
+            ))}
+        </Root>
+    ) : null;
 };
 
 SimpleList.propTypes = {
     className: PropTypes.string,
-    classes: PropTypes.object,
     leftAvatar: PropTypes.func,
     leftIcon: PropTypes.func,
     linkType: PropTypes.oneOfType([
@@ -220,39 +204,31 @@ SimpleList.propTypes = {
     rowStyle: PropTypes.func,
 };
 
-export type FunctionToElement<RecordType extends Record = Record> = (
+export type FunctionToElement<RecordType extends RaRecord = any> = (
     record: RecordType,
     id: Identifier
 ) => ReactNode;
 
-export interface SimpleListProps<RecordType extends Record = Record>
+export interface SimpleListProps<RecordType extends RaRecord = any>
     extends Omit<ListProps, 'classes'> {
     className?: string;
-    classes?: ClassesOverride<typeof useStyles>;
     hasBulkActions?: boolean;
     leftAvatar?: FunctionToElement<RecordType>;
     leftIcon?: FunctionToElement<RecordType>;
     primaryText?: FunctionToElement<RecordType> | ReactElement;
-    linkType?: string | FunctionLinkType | boolean;
+    linkType?: string | FunctionLinkType | false;
     rightAvatar?: FunctionToElement<RecordType>;
     rightIcon?: FunctionToElement<RecordType>;
     secondaryText?: FunctionToElement<RecordType> | ReactElement;
     tertiaryText?: FunctionToElement<RecordType> | ReactElement;
-    rowStyle?: (record: Record, index: number) => any;
+    rowStyle?: (record: RecordType, index: number) => any;
     // can be injected when using the component without context
-    basePath?: string;
-    data?: RecordMap<RecordType>;
-    ids?: Identifier[];
-    loaded?: boolean;
+    resource?: string;
+    data?: RecordType[];
+    isLoading?: boolean;
+    isLoaded?: boolean;
     total?: number;
 }
-
-const useLinkOrNotStyles = makeStyles(
-    {
-        link: {},
-    },
-    { name: 'RaLinkOrNot' }
-);
 
 const LinkOrNot = (
     props: LinkOrNotProps & Omit<ListItemProps, 'button' | 'component' | 'id'>
@@ -260,69 +236,55 @@ const LinkOrNot = (
     const {
         classes: classesOverride,
         linkType,
-        basePath,
+        resource,
         id,
         children,
         record,
         ...rest
     } = props;
-    const classes = useLinkOrNotStyles({ classes: classesOverride });
-    const link =
+    const createPath = useCreatePath();
+    const type =
         typeof linkType === 'function' ? linkType(record, id) : linkType;
 
-    return link === 'edit' || link === true ? (
-        <ListItem
-            button
-            // @ts-ignore
-            component={Link}
-            to={linkToRecord(basePath, id)}
-            className={classes.link}
-            {...rest}
-        >
-            {children}
-        </ListItem>
-    ) : link === 'show' ? (
-        <ListItem
-            button
-            // @ts-ignore
-            component={Link}
-            to={`${linkToRecord(basePath, id)}/show`}
-            className={classes.link}
-            {...rest}
-        >
-            {children}
-        </ListItem>
-    ) : link !== false ? (
-        <ListItem
-            button
-            // @ts-ignore
-            component={Link}
-            to={link}
-            className={classes.link}
-            {...rest}
-        >
-            {children}
-        </ListItem>
-    ) : (
-        <ListItem
+    return type === false ? (
+        <ListItemText
             // @ts-ignore
             component="div"
             {...rest}
         >
             {children}
-        </ListItem>
+        </ListItemText>
+    ) : (
+        // @ts-ignore
+        <ListItemButton
+            component={Link}
+            to={createPath({ resource, id, type })}
+            {...rest}
+        >
+            {children}
+        </ListItemButton>
     );
 };
 
-export type FunctionLinkType = (record: Record, id: Identifier) => string;
+export type FunctionLinkType = (record: RaRecord, id: Identifier) => string;
 
 export interface LinkOrNotProps {
-    classes?: ClassesOverride<typeof useLinkOrNotStyles>;
-    linkType?: string | FunctionLinkType | boolean;
-    basePath: string;
+    linkType?: string | FunctionLinkType | false;
+    resource: string;
     id: Identifier;
-    record: Record;
+    record: RaRecord;
     children: ReactNode;
 }
 
-export default SimpleList;
+const PREFIX = 'RaSimpleList';
+
+export const SimpleListClasses = {
+    tertiary: `${PREFIX}-tertiary`,
+};
+
+const Root = styled(List, {
+    name: PREFIX,
+    overridesResolver: (props, styles) => styles.root,
+})({
+    [`& .${SimpleListClasses.tertiary}`]: { float: 'right', opacity: 0.541176 },
+});
