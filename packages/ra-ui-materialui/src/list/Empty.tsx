@@ -17,7 +17,6 @@ export const Empty = (props: EmptyProps) => {
     const resource = useResourceContext(props);
 
     const translate = useTranslate();
-    const { icon = <Inbox className={classes.icon} /> } = props;
 
     const getResourceLabel = useGetResourceLabel();
     const resourceName = translate(`resources.${resource}.forcedCaseName`, {
