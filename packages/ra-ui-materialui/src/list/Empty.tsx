@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { ReactElement } from 'react';
 import { styled } from '@mui/material/styles';
 import { Typography } from '@mui/material';
 import Inbox from '@mui/icons-material/Inbox';
@@ -12,7 +12,7 @@ import {
 import { CreateButton } from '../button';
 
 export const Empty = (props: EmptyProps) => {
-    const { className } = props;
+    const { className, icon = <Inbox className={classes.icon} /> } = props;
     const { hasCreate } = useResourceDefinition(props);
     const resource = useResourceContext(props);
 
@@ -30,7 +30,7 @@ export const Empty = (props: EmptyProps) => {
     return (
         <Root className={className}>
             <div className={EmptyClasses.message}>
-                <Inbox className={EmptyClasses.icon} />
+                {icon}
                 <Typography variant="h4" paragraph>
                     {translate(`resources.${resource}.empty`, {
                         _: emptyMessage,
@@ -57,6 +57,7 @@ export interface EmptyProps {
     resource?: string;
     hasCreate?: boolean;
     className?: string;
+    icon?: ReactElement;
 }
 
 const PREFIX = 'RaEmpty';
